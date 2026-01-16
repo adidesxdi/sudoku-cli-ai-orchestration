@@ -89,7 +89,23 @@ sudoku generate --difficulty medium --seed 123
 sudoku generate --difficulty hard --seed 999
 ```
 
-> **Note:** The generate command is not yet implemented and currently outputs a stub message.
+**Output:** An 81-character puzzle string using `0` for empty cells:
+```
+027000048390000020100090037009001080705008200840020700938040500000000000671005093
+```
+
+**Difficulty levels:**
+| Level | Clues | Description |
+|-------|-------|-------------|
+| `easy` | 36-45 | Good for beginners |
+| `medium` | 27-35 | Moderate challenge |
+| `hard` | 22-26 | Requires advanced techniques |
+
+**Determinism:** The same `--difficulty` and `--seed` combination always produces the same puzzle.
+
+**Exit codes:**
+- `0` - Puzzle generated successfully
+- `1` - Invalid parameters
 
 ## Input Format
 
@@ -154,34 +170,35 @@ src/
 ├── cli/
 │   ├── index.ts              # CLI entry point
 │   └── commands/
-│       ├── solve.ts          # solve subcommand (implemented)
-│       ├── validate.ts       # validate subcommand (implemented)
-│       └── generate.ts       # generate subcommand (stub)
+│       ├── solve.ts          # solve subcommand
+│       ├── validate.ts       # validate subcommand
+│       └── generate.ts       # generate subcommand
 └── core/
     ├── puzzle.ts             # Puzzle type and utilities
     ├── parsePuzzleInput.ts   # Input parsing and validation
     ├── validatePuzzle.ts     # Sudoku validation engine
-    └── solvePuzzle.ts        # Sudoku solving engine (backtracking)
+    ├── solvePuzzle.ts        # Sudoku solving engine (backtracking)
+    ├── generatePuzzle.ts     # Sudoku generator with difficulty
+    └── seededRandom.ts       # Deterministic RNG (Mulberry32)
 
 tests/
 ├── core/                     # Unit tests for core modules
 │   ├── parsePuzzleInput.test.ts
 │   ├── validatePuzzle.test.ts
-│   └── solvePuzzle.test.ts
+│   ├── solvePuzzle.test.ts
+│   └── generatePuzzle.test.ts
 └── smoke/                    # CLI integration tests
     ├── cli.solve.test.ts
     ├── cli.validate.test.ts
+    ├── cli.generate.test.ts
     ├── cli.parse-errors.test.ts
     └── cli.stubs.test.ts
 
 testdata/
 ├── solvable/                 # Valid solvable puzzles
-│   ├── easy1.sdk
-│   ├── medium1.sdk
-│   ├── hard1.sdk
-│   └── already-solved.sdk
-└── unsolvable/               # Invalid or unsolvable puzzles
-    └── contradiction.sdk
+├── valid/                    # Valid puzzles for validation tests
+├── invalid/                  # Invalid puzzles (rule violations)
+└── unsolvable/               # Unsolvable puzzles
 ```
 
 ### Running Tests
@@ -202,26 +219,38 @@ npm run lint
 
 ### Demo / Quick Start
 
-Here's a quick demo of the implemented features:
+Here's a quick demo of all features:
 
 ```bash
 # Build the project
 npm run build
 
-# Solve an easy puzzle from a file
+# 1. Generate a puzzle with a specific seed (deterministic)
+sudoku generate --difficulty medium --seed 42
+# Output: 027000048390000020100090037009001080705008200840020700938040500000000000671005093
+
+# 2. Validate the generated puzzle
+sudoku validate --inputEP "027000048390000020100090037009001080705008200840020700938040500000000000671005093"
+# Output: Puzzle is valid.
+
+# 3. Solve the puzzle
+sudoku solve --input "027000048390000020100090037009001080705008200840020700938040500000000000671005093"
+# Output: Solved grid with box borders
+
+# 4. Full pipeline: generate → validate → solve
+p=$(sudoku generate --difficulty hard --seed 99)
+echo "Generated: $p"
+sudoku validate --inputEP "$p"
+sudoku solve --input "$p"
+
+# 5. Work with puzzle files
 sudoku solve --input testdata/solvable/easy1.sdk
-
-# Solve using a string directly
-sudoku solve --input "530070000600195000098000060800060003400803001700020006060000280000419005000080079"
-
-# Validate a puzzle
 sudoku validate --inputEP testdata/solvable/medium1.sdk
 
-# Try an invalid puzzle
-sudoku validate --inputEP testdata/unsolvable/contradiction.sdk
-
-# Generate a puzzle (not yet implemented)
-sudoku generate --difficulty medium --seed 42
+# 6. Error handling examples
+sudoku solve --input "too-short"           # Invalid length error
+sudoku validate --inputEP "invalid@chars"  # Invalid character error
+sudoku generate --difficulty extreme --seed 1  # Invalid difficulty
 ```
 
 ## Implementation Status
@@ -232,8 +261,8 @@ Based on the [BACKLOG_PACK.md](BACKLOG_PACK.md):
 - ✅ **SUD-2**: Input model & robust puzzle parsing
 - ✅ **SUD-3**: Sudoku validation engine & `sudoku validate`
 - ✅ **SUD-4**: Sudoku solving engine & `sudoku solve`
-- ⏳ **SUD-5**: Sudoku generator with difficulty & deterministic seed (not yet implemented)
-- ⏳ **SUD-6**: Tests, CI workflow, documentation & AI-readiness assets (in progress)
+- ✅ **SUD-5**: Sudoku generator with difficulty & deterministic seed
+- ✅ **SUD-6**: Tests, CI workflow, documentation & AI-readiness assets
 
 ## How It Works
 
@@ -258,10 +287,22 @@ The validator checks:
 
 Empty cells (0 or `.`) are ignored during duplicate checking, allowing partial puzzles to be validated.
 
+### Generator
+
+The generator creates puzzles with guaranteed unique solutions:
+1. Generate a fully solved grid using randomized backtracking (seeded RNG)
+2. Remove clues one at a time in random order
+3. After each removal, verify the puzzle still has exactly one solution
+4. Stop when target clue count for difficulty is reached
+
+The seeded RNG (Mulberry32 algorithm) ensures the same seed always produces the same puzzle.
+
 ## Additional Resources
 
+- **Architecture**: See [ARCHITECTURE.md](ARCHITECTURE.md) for module layout and design
+- **Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md) for coding conventions and guidelines
 - **Backlog**: See [BACKLOG_PACK.md](BACKLOG_PACK.md) for the complete project plan and story details
-- **Copilot Instructions**: See [.github/copilot-instructions.md](.github/copilot-instructions.md) for development guidelines
+- **Copilot Instructions**: See [.github/copilot-instructions.md](.github/copilot-instructions.md) for AI assistant guidelines
 
 ## License
 
