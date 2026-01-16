@@ -33,16 +33,20 @@ function runCli(args: string[]): Promise<{ code: number | null; stdout: string; 
 
 describe('CLI parse error handling', () => {
   describe('solve command', () => {
-    it('should parse valid 81-char string and exit 0', async () => {
+    it('should parse and solve valid 81-char string and exit 0', async () => {
       const result = await runCli(['solve', '--input', VALID_PUZZLE]);
       expect(result.code).toBe(0);
-      expect(result.stdout).toContain('Parsed puzzle');
+      // Should output the solution in grid format (13 lines)
+      const lines = result.stdout.trim().split('\n');
+      expect(lines).toHaveLength(13);
     });
 
-    it('should parse valid file and exit 0', async () => {
+    it('should parse and solve valid file and exit 0', async () => {
       const result = await runCli(['solve', '--input', resolve(TESTDATA_DIR, 'valid-easy.sdk')]);
       expect(result.code).toBe(0);
-      expect(result.stdout).toContain('Parsed puzzle');
+      // Should output the solution in grid format
+      const lines = result.stdout.trim().split('\n');
+      expect(lines).toHaveLength(13);
     });
 
     it('should exit non-zero for too-short input', async () => {
