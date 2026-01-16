@@ -1,0 +1,136 @@
+name: Docs Refresh
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  create-docs-issue:
+    name: Create Docs Refresh Issue
+    runs-on: ubuntu-latest
+    # Only run if CI succeeded and it was on main
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 2  # Fetch parent commit for comparison
+
+      - name: Get commit info
+        id: commit-info
+        run: |
+          HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
+          SHORT_SHA="${HEAD_SHA:0:7}"
+          echo "head_sha=$HEAD_SHA" >> $GITHUB_OUTPUT
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+
+      - name: Get changed files
+        id: changed-files
+        run: |
+          # Try to get changed files by comparing with parent
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git show --name-only --format="" HEAD)
+          
+          # Save to file for multi-line handling
+          echo "$CHANGED_FILES" > /tmp/changed_files.txt
+          
+          # Check if changes are docs-only
+          DOCS_ONLY="true"
+          while IFS= read -r file; do
+            if [[ -n "$file" ]]; then
+              # If file is NOT README.md and NOT under docs/, it's not docs-only
+              if [[ "$file" != "README.md" && "$file" != docs/* ]]; then
+                DOCS_ONLY="false"
+                break
+              fi
+            fi
+          done < /tmp/changed_files.txt
+          
+          echo "docs_only=$DOCS_ONLY" >> $GITHUB_OUTPUT
+          
+          # Format as markdown list
+          FORMATTED=$(cat /tmp/changed_files.txt | sed 's/^/- /')
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$FORMATTED" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Skip if docs-only changes
+        if: steps.changed-files.outputs.docs_only == 'true'
+        run: |
+          echo "::notice::Skipping docs refresh issue - changes are docs-only (README.md or docs/**)"
+
+      - name: Create docs refresh issue
+        if: steps.changed-files.outputs.docs_only != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const headSha = '${{ steps.commit-info.outputs.head_sha }}';
+            const shortSha = '${{ steps.commit-info.outputs.short_sha }}';
+            const changedFiles = `${{ steps.changed-files.outputs.files }}`;
+            const commitUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/commit/${headSha}`;
+            
+            const issueBody = `## Docs Refresh Triggered
+
+            **Commit:** [${shortSha}](${commitUrl})
+
+            ### Changed Files
+
+            ${changedFiles}
+
+            ---
+
+            ## Optional prompt for Copilot (Docs agent)
+
+            > Use the \`sudoku-doc-writer.agent.md\` behavior.
+            >
+            > Follow \`.github/copilot-instructions.md\`.
+            >
+            > Update \`README.md\` and/or \`docs/\` to reflect the actual CLI behavior and any changes introduced in commit ${shortSha}.
+            >
+            > Keep code changes minimal; docs-only updates are preferred.
+            >
+            > Reference the changed files above to understand what was modified.
+
+            ---
+
+            _This issue was automatically created by the Docs Refresh workflow._
+            `;
+
+            // Check if label exists, create if not
+            try {
+              await github.rest.issues.getLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: 'docs-agent'
+              });
+            } catch (e) {
+              if (e.status === 404) {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: 'docs-agent',
+                  color: '0075ca',
+                  description: 'Docs refresh triggered by CI'
+                });
+              }
+            }
+
+            // Create the issue
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Docs refresh: ${shortSha}`,
+              body: issueBody,
+              labels: ['docs-agent']
+            });
+
+            console.log(`Created issue #${issue.data.number}: ${issue.data.html_url}`);
