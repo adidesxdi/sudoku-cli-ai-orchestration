@@ -37,10 +37,14 @@ describe('CLI stub commands', () => {
     expect(result.stdout).toContain('generate');
   });
 
-  it('should run solve command with stub output', async () => {
-    const result = await runCli(['solve', '--input', '123456789'.repeat(9)]);
+  it('should run solve command and solve puzzle', async () => {
+    // Use a valid solvable puzzle
+    const solvablePuzzle = '530070000600195000098000060800060003400803001700020006060000280000419005000080079';
+    const result = await runCli(['solve', '--input', solvablePuzzle]);
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain('Not implemented yet');
+    // Should output 9 lines of 9 digits (the solution)
+    const lines = result.stdout.trim().split('\n');
+    expect(lines).toHaveLength(9);
   });
 
   it('should run validate command and show result', async () => {
