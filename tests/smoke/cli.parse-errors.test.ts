@@ -36,17 +36,17 @@ describe('CLI parse error handling', () => {
     it('should parse and solve valid 81-char string and exit 0', async () => {
       const result = await runCli(['solve', '--input', VALID_PUZZLE]);
       expect(result.code).toBe(0);
-      // Should output the solution (9 lines of 9 digits)
+      // Should output the solution in grid format (13 lines)
       const lines = result.stdout.trim().split('\n');
-      expect(lines).toHaveLength(9);
+      expect(lines).toHaveLength(13);
     });
 
     it('should parse and solve valid file and exit 0', async () => {
       const result = await runCli(['solve', '--input', resolve(TESTDATA_DIR, 'valid-easy.sdk')]);
       expect(result.code).toBe(0);
-      // Should output the solution
+      // Should output the solution in grid format
       const lines = result.stdout.trim().split('\n');
-      expect(lines).toHaveLength(9);
+      expect(lines).toHaveLength(13);
     });
 
     it('should exit non-zero for too-short input', async () => {

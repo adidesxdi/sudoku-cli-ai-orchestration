@@ -42,9 +42,9 @@ describe('CLI stub commands', () => {
     const solvablePuzzle = '530070000600195000098000060800060003400803001700020006060000280000419005000080079';
     const result = await runCli(['solve', '--input', solvablePuzzle]);
     expect(result.code).toBe(0);
-    // Should output 9 lines of 9 digits (the solution)
+    // Should output grid format (13 lines: 4 separators + 9 data rows)
     const lines = result.stdout.trim().split('\n');
-    expect(lines).toHaveLength(9);
+    expect(lines).toHaveLength(13);
   });
 
   it('should run validate command and show result', async () => {

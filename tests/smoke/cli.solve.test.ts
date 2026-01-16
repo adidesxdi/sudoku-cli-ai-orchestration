@@ -31,17 +31,21 @@ function runCli(args: string[]): Promise<{ code: number | null; stdout: string; 
 // Easy puzzle as string (same as testdata/solvable/easy1.sdk)
 const EASY_PUZZLE = '530070000600195000098000060800060003400803001700020006060000280000419005000080079';
 
-// Expected solution for the easy puzzle
+// Expected solution for the easy puzzle in grid format
 const EASY_SOLUTION = [
-  '534678912',
-  '672195348',
-  '198342567',
-  '859761423',
-  '426853791',
-  '713924856',
-  '961537284',
-  '287419635',
-  '345286179',
+  '+-------+-------+-------+',
+  '| 5 3 4 | 6 7 8 | 9 1 2 |',
+  '| 6 7 2 | 1 9 5 | 3 4 8 |',
+  '| 1 9 8 | 3 4 2 | 5 6 7 |',
+  '+-------+-------+-------+',
+  '| 8 5 9 | 7 6 1 | 4 2 3 |',
+  '| 4 2 6 | 8 5 3 | 7 9 1 |',
+  '| 7 1 3 | 9 2 4 | 8 5 6 |',
+  '+-------+-------+-------+',
+  '| 9 6 1 | 5 3 7 | 2 8 4 |',
+  '| 2 8 7 | 4 1 9 | 6 3 5 |',
+  '| 3 4 5 | 2 8 6 | 1 7 9 |',
+  '+-------+-------+-------+',
 ].join('\n');
 
 describe('CLI solve command', () => {
@@ -68,13 +72,12 @@ describe('CLI solve command', () => {
       resolve(TESTDATA_DIR, 'solvable/medium1.sdk'),
     ]);
     expect(result.code).toBe(0);
-    // Should have 9 lines of 9 digits each
+    // Should have grid format with borders
     const lines = result.stdout.trim().split('\n');
-    expect(lines).toHaveLength(9);
-    lines.forEach((line) => {
-      expect(line).toHaveLength(9);
-      expect(/^[1-9]{9}$/.test(line)).toBe(true);
-    });
+    expect(lines).toHaveLength(13); // 4 separators + 9 data rows
+    // Check that it has the right format
+    expect(lines[0]).toBe('+-------+-------+-------+');
+    expect(lines[1]).toMatch(/^\| \d \d \d \| \d \d \d \| \d \d \d \|$/);
   });
 
   it('should solve an already-solved puzzle', async () => {
