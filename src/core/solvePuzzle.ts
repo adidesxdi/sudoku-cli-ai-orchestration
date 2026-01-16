@@ -81,6 +81,49 @@ function solveRecursive(puzzle: Puzzle): boolean {
 }
 
 /**
+ * Count the number of solutions for a puzzle, up to a limit.
+ * Useful for verifying puzzle uniqueness.
+ *
+ * @param puzzle - The puzzle to count solutions for
+ * @param limit - Stop counting after reaching this limit (default 2)
+ * @returns The number of solutions found (capped at limit)
+ */
+export function countSolutions(puzzle: Puzzle, limit: number = 2): number {
+  // Clone to avoid modifying input
+  const workingPuzzle = [...puzzle];
+  let count = 0;
+
+  function countRecursive(): boolean {
+    const emptyIndex = findEmptyCell(workingPuzzle);
+
+    // No empty cells means we found a solution
+    if (emptyIndex === -1) {
+      count++;
+      return count >= limit; // Return true to stop if limit reached
+    }
+
+    // Try digits 1-9
+    for (let digit = 1; digit <= 9; digit++) {
+      if (isValidPlacement(workingPuzzle, emptyIndex, digit)) {
+        workingPuzzle[emptyIndex] = digit;
+
+        if (countRecursive()) {
+          workingPuzzle[emptyIndex] = 0;
+          return true; // Limit reached, stop searching
+        }
+
+        workingPuzzle[emptyIndex] = 0;
+      }
+    }
+
+    return false;
+  }
+
+  countRecursive();
+  return count;
+}
+
+/**
  * Solve a Sudoku puzzle using deterministic backtracking.
  *
  * Returns:

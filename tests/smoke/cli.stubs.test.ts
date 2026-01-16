@@ -56,10 +56,12 @@ describe('CLI stub commands', () => {
     expect(result.stdout).toContain('Puzzle is valid');
   });
 
-  it('should run generate command with stub output', async () => {
+  it('should run generate command and output 81-char puzzle string', async () => {
     const result = await runCli(['generate', '--difficulty', 'easy', '--seed', '42']);
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain('Not implemented yet');
+    // Should output an 81-character puzzle string (digits and dots)
+    const puzzleStr = result.stdout.trim();
+    expect(puzzleStr).toMatch(/^[0-9.]{81}$/);
   });
 
   it('should reject invalid difficulty', async () => {

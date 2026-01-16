@@ -1,10 +1,9 @@
 import { Command } from 'commander';
-
-type Difficulty = 'easy' | 'medium' | 'hard';
+import { generatePuzzle, puzzleToString, Difficulty } from '../../core/generatePuzzle.js';
 
 interface GenerateOptions {
   difficulty: Difficulty;
-  seed: string;
+  seed: number;
 }
 
 export function registerGenerateCommand(program: Command): void {
@@ -29,8 +28,16 @@ export function registerGenerateCommand(program: Command): void {
       }
       return num;
     })
-    .action((_options: GenerateOptions) => {
-      console.log('generate: Not implemented yet');
-      process.exit(0);
+    .action((options: GenerateOptions) => {
+      try {
+        const result = generatePuzzle(options.difficulty, options.seed);
+        const puzzleStr = puzzleToString(result.puzzle);
+        console.log(puzzleStr);
+        process.exit(0);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(`Error: ${message}`);
+        process.exit(1);
+      }
     });
 }
