@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { parsePuzzleInput, PuzzleParseError } from '../../core/parsePuzzleInput.js';
+import { validatePuzzle } from '../../core/validatePuzzle.js';
 
 interface ValidateOptions {
   inputEP: string;
@@ -13,10 +14,16 @@ export function registerValidateCommand(program: Command): void {
     .action((options: ValidateOptions) => {
       try {
         const puzzle = parsePuzzleInput(options.inputEP);
-        // Stub: puzzle parsed successfully, validator not implemented yet
-        console.log(`validate: Parsed puzzle with ${puzzle.filter((c) => c !== 0).length} clues`);
-        console.log('validate: Not implemented yet');
-        process.exit(0);
+        const result = validatePuzzle(puzzle);
+
+        if (result.isValid) {
+          console.log('Puzzle is valid.');
+          process.exit(0);
+        } else {
+          const summary = result.errors.map((e) => e.message).join('; ');
+          console.error(`Puzzle is invalid: ${summary}`);
+          process.exit(1);
+        }
       } catch (err) {
         if (err instanceof PuzzleParseError) {
           console.error(`Error: ${err.message}`);

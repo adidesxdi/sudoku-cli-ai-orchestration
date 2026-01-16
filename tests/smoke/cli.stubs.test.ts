@@ -43,10 +43,13 @@ describe('CLI stub commands', () => {
     expect(result.stdout).toContain('Not implemented yet');
   });
 
-  it('should run validate command with stub output', async () => {
-    const result = await runCli(['validate', '--inputEP', '123456789'.repeat(9)]);
+  it('should run validate command and show result', async () => {
+    // Use a valid puzzle that passes validation
+    const validPuzzle =
+      '534678912672195348198342567859761423426853791713924856961537284287419635345286179';
+    const result = await runCli(['validate', '--inputEP', validPuzzle]);
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain('Not implemented yet');
+    expect(result.stdout).toContain('Puzzle is valid');
   });
 
   it('should run generate command with stub output', async () => {

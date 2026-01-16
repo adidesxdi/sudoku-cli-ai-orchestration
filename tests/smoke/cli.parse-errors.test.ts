@@ -80,20 +80,20 @@ describe('CLI parse error handling', () => {
   });
 
   describe('validate command', () => {
-    it('should parse valid 81-char string and exit 0', async () => {
+    it('should validate valid 81-char string and exit 0', async () => {
       const result = await runCli(['validate', '--inputEP', VALID_PUZZLE]);
       expect(result.code).toBe(0);
-      expect(result.stdout).toContain('Parsed puzzle');
+      expect(result.stdout).toContain('Puzzle is valid');
     });
 
-    it('should parse valid file and exit 0', async () => {
+    it('should validate valid file and exit 0', async () => {
       const result = await runCli([
         'validate',
         '--inputEP',
         resolve(TESTDATA_DIR, 'valid-easy.sdk'),
       ]);
       expect(result.code).toBe(0);
-      expect(result.stdout).toContain('Parsed puzzle');
+      expect(result.stdout).toContain('Puzzle is valid');
     });
 
     it('should exit non-zero for too-short input', async () => {
